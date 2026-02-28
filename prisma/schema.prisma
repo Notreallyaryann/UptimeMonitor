@@ -1,0 +1,54 @@
+
+generator client {
+  provider = "prisma-client"
+
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id             Int      @id @default(autoincrement())
+  email          String   @unique
+  hashedPassword String
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  urls           MonitoredUrl[]
+}
+
+model MonitoredUrl {
+  id             Int      @id @default(autoincrement())
+  userId         Int
+  user           User     @relation(fields: [userId], references: [id])
+  url            String
+  checkInterval  Int      @default(5)    // minutes
+  timeout        Int      @default(10)   // seconds
+  expectedStatus Int      @default(200)
+  isActive       Boolean  @default(true)
+  lastCheckedAt  DateTime?
+  lastStatus     Boolean? // true = up, false = down
+  createdAt      DateTime @default(now())
+  logs           CheckLog[]
+  alerts         Alert[]
+}
+
+model CheckLog {
+  id             Int      @id @default(autoincrement())
+  urlId          Int
+  url            MonitoredUrl @relation(fields: [urlId], references: [id])
+  checkedAt      DateTime @default(now())
+  responseTimeMs Int?
+  statusCode     Int?
+  errorMessage   String?
+  isSuccess      Boolean
+}
+
+model Alert {
+  id               Int      @id @default(autoincrement())
+  urlId            Int
+  url              MonitoredUrl @relation(fields: [urlId], references: [id])
+  triggeredAt      DateTime @default(now())
+  resolvedAt       DateTime?
+  notificationSent Boolean  @default(false)
+}
