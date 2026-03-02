@@ -21,6 +21,8 @@ export const POST = auth(async (req) => {
 
   try {
     const { url, checkInterval, timeout, expectedStatus } = await req.json()
+    
+    // Create the new URL in database
     const newUrl = await prisma.monitoredUrl.create({
       data: {
         userId: req.auth.user.id,
@@ -30,6 +32,16 @@ export const POST = auth(async (req) => {
         expectedStatus: Number(expectedStatus)
       }
     })
+
+   
+    const baseUrl = process.env.NEXTAUTH_URL 
+    fetch(`${baseUrl}/api/cron/check-urls`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${process.env.CRON_SECRET}`
+      }
+    }).catch(err => console.error('Background check failed:', err))
+
     return NextResponse.json(newUrl)
   } catch (error) {
     console.error(error)
