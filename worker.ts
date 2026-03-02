@@ -5,18 +5,28 @@ dotenv.config({ path: '.env.local' })
 import { prisma } from './lib/prisma.ts'
 import axios from 'axios'
 import nodemailer from 'nodemailer'
+import dns from 'dns' // Added for IPv4 fix
 
-
-
-// Email transporter
+// Email transporter with IPv4 fix
 const transporter = nodemailer.createTransport({
-    host: process.env.EMAIL_HOST,
-    port: Number(process.env.EMAIL_PORT),
+    host: 'smtp.gmail.com',
+    port: 587, // Using 587 which often handles IPv4 better
+    secure: false, // false for 587
+    requireTLS: true,
     auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS
+    },
+    connectionTimeout: 30000, // 30 seconds
+    socketTimeout: 30000,
+    // Force IPv4 to avoid Render's IPv6 connectivity issues
+    lookup: (hostname:any, options:any, callback:any) => {
+        dns.lookup(hostname, { family: 4 }, callback);
+    },
+    tls: {
+        rejectUnauthorized: false // Helps with some Gmail certificate issues
     }
-})
+} as any)
 
 // Single function to check ALL due URLs
 async function checkAllDueUrls() {
@@ -41,15 +51,13 @@ async function checkAllDueUrls() {
 
     console.log(`Found ${dueUrls.length} URLs to check`)
 
-    for (const urlEntry of dueUrls) {
-        // Verify interval
-        if (urlEntry.lastCheckedAt) {
-            const nextCheck = new Date(urlEntry.lastCheckedAt.getTime() + urlEntry.checkInterval * 60000)
-            if (nextCheck > now) continue
-        }
-
-        // Check the URL
-        await checkSingleUrl(urlEntry)
+    // Process URLs with concurrency of 3 for better performance
+    const CONCURRENCY = 3
+    for (let i = 0; i < dueUrls.length; i += CONCURRENCY) {
+        const batch = dueUrls.slice(i, i + CONCURRENCY)
+        console.log(`Processing batch ${i/CONCURRENCY + 1} with ${batch.length} URLs`)
+        
+        await Promise.all(batch.map(urlEntry => checkSingleUrl(urlEntry)))
     }
 }
 
@@ -63,7 +71,7 @@ async function checkSingleUrl(urlEntry: any) {
 
     try {
         const response = await axios.get(urlEntry.url, {
-            timeout: urlEntry.timeout * 1000,
+            timeout: Math.min(urlEntry.timeout * 1000, 10000), // Max 10 seconds per URL
             validateStatus: () => true,
             headers: {
                 'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36'
@@ -112,39 +120,75 @@ async function checkSingleUrl(urlEntry: any) {
 }
 
 async function handleAlert(urlEntry: any, errorMessage: string | null, statusCode: number | null) {
+    console.log(`📧 handleAlert started for ${urlEntry.url}`)
+    
     const activeAlert = await prisma.alert.findFirst({
         where: { urlId: urlEntry.id, resolvedAt: null }
     })
+    
+    console.log(`📧 Active alert:`, activeAlert)
 
     if (!activeAlert || !activeAlert.notificationSent) {
         let alertId = activeAlert?.id
         
         if (!alertId) {
+            console.log(`📧 Creating new alert record for ${urlEntry.url}`)
             const newAlert = await prisma.alert.create({
-                data: { urlId: urlEntry.id, triggeredAt: new Date() }
+                data: { 
+                    urlId: urlEntry.id, 
+                    triggeredAt: new Date() 
+                }
             })
             alertId = newAlert.id
+            console.log(`📧 New alert created with ID: ${alertId}`)
         }
 
         try {
-            await transporter.sendMail({
+            console.log(`📧 Attempting to send email to ${urlEntry.user.email}`)
+            console.log(`📧 Email config:`, {
+                host: process.env.EMAIL_HOST,
+                port: process.env.EMAIL_PORT,
+                user: process.env.EMAIL_USER,
                 from: process.env.FROM_EMAIL,
-                to: urlEntry.user.email,
-                subject: `Uptime Alert: ${urlEntry.url} is DOWN`,
-                text: `Your URL ${urlEntry.url} is down. Error: ${errorMessage || 'Status Code: ' + statusCode}`
+                to: urlEntry.user.email
             })
             
+            const info = await transporter.sendMail({
+                from: process.env.FROM_EMAIL,
+                to: urlEntry.user.email,
+                subject: `⚠️ Uptime Alert: ${urlEntry.url} is DOWN`,
+                text: `Your URL ${urlEntry.url} is down.\n\nError: ${errorMessage || 'Status Code: ' + statusCode}\n\nChecked at: ${new Date().toLocaleString()}`
+            })
+            
+            console.log(`✅ Email sent successfully! Message ID: ${info.messageId}`)
+            
+            // Update the alert record
             await prisma.alert.update({
                 where: { id: alertId },
-                data: { notificationSent: true }
+                data: { 
+                    notificationSent: true,
+                    // Optionally store the message ID or error details
+                }
             })
-        } catch (emailError) {
-            console.error('Email failed:', emailError)
+            console.log(`✅ Alert ${alertId} marked as notificationSent=true`)
+            
+        } catch (emailError: any) {
+            console.error(`❌ EMAIL FAILED for ${urlEntry.url}:`)
+            console.error(`Error code:`, emailError.code)
+            console.error(`Error message:`, emailError.message)
+            console.error(`Error command:`, emailError.command)
+            console.error(`Error response:`, emailError.response)
+            console.error(`Stack:`, emailError.stack)
+            
+            // Don't update notificationSent - will retry next time
+            console.log(`📧 notificationSent kept as false for retry`)
         }
+    } else {
+        console.log(`📧 Skipping email - alert already sent for this downtime event`)
     }
 }
 
-
+// Run the check
 checkAllDueUrls().then(() => {
     console.log('✅ Check completed')
     process.exit(0) 
