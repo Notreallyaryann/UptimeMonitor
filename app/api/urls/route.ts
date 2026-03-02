@@ -1,31 +1,38 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { getUserFromRequest } from '@/lib/authMiddleware'
+import { auth } from '@/auth'
 import { prisma } from '@/lib/prisma'
+import { NextResponse } from 'next/server'
 
-export async function GET(req: NextRequest) {
-  const user = await getUserFromRequest(req)
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+export const GET = auth(async (req) => {
+  if (!req.auth?.user?.id) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
 
   const urls = await prisma.monitoredUrl.findMany({
-    where: { userId: user.userId },
+    where: { userId: req.auth.user.id },
     orderBy: { createdAt: 'desc' }
   })
   return NextResponse.json(urls)
-}
+})
 
-export async function POST(req: NextRequest) {
-  const user = await getUserFromRequest(req)
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+export const POST = auth(async (req) => {
+  if (!req.auth?.user?.id) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
 
-  const { url, checkInterval, timeout, expectedStatus } = await req.json()
-  const newUrl = await prisma.monitoredUrl.create({
-    data: {
-      userId: user.userId,
-      url,
-      checkInterval,
-      timeout,
-      expectedStatus
-    }
-  })
-  return NextResponse.json(newUrl)
-}
+  try {
+    const { url, checkInterval, timeout, expectedStatus } = await req.json()
+    const newUrl = await prisma.monitoredUrl.create({
+      data: {
+        userId: req.auth.user.id,
+        url,
+        checkInterval: Number(checkInterval),
+        timeout: Number(timeout),
+        expectedStatus: Number(expectedStatus)
+      }
+    })
+    return NextResponse.json(newUrl)
+  } catch (error) {
+    console.error(error)
+    return NextResponse.json({ error: 'Failed to create monitor' }, { status: 500 })
+  }
+})

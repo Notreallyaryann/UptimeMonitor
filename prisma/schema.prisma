@@ -9,18 +9,63 @@ datasource db {
 }
 
 model User {
-  id             Int      @id @default(autoincrement())
-  email          String   @unique
-  hashedPassword String
-  isActive       Boolean  @default(true)
-  createdAt      DateTime @default(now())
-  urls           MonitoredUrl[]
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime?
+  image         String?
+  hashedPassword String?
+  isActive      Boolean   @default(true)
+  accounts      Account[]
+  sessions      Session[]
+  urls          MonitoredUrl[]
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+model Account {
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+ 
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+ 
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+ 
+  @@id([provider, providerAccountId])
+}
+
+model Session {
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+ 
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model VerificationToken {
+  identifier String
+  token      String
+  expires    DateTime
+ 
+  @@id([identifier, token])
 }
 
 model MonitoredUrl {
   id             Int      @id @default(autoincrement())
-  userId         Int
-  user           User     @relation(fields: [userId], references: [id])
+  userId         String
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   url            String
   checkInterval  Int      @default(5)    // minutes
   timeout        Int      @default(10)   // seconds
@@ -36,7 +81,7 @@ model MonitoredUrl {
 model CheckLog {
   id             Int      @id @default(autoincrement())
   urlId          Int
-  url            MonitoredUrl @relation(fields: [urlId], references: [id])
+  url            MonitoredUrl @relation(fields: [urlId], references: [id], onDelete: Cascade)
   checkedAt      DateTime @default(now())
   responseTimeMs Int?
   statusCode     Int?
@@ -47,7 +92,7 @@ model CheckLog {
 model Alert {
   id               Int      @id @default(autoincrement())
   urlId            Int
-  url              MonitoredUrl @relation(fields: [urlId], references: [id])
+  url              MonitoredUrl @relation(fields: [urlId], references: [id], onDelete: Cascade)
   triggeredAt      DateTime @default(now())
   resolvedAt       DateTime?
   notificationSent Boolean  @default(false)

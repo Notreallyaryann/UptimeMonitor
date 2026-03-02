@@ -1,28 +1,56 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { getUserFromRequest } from '@/lib/authMiddleware'
+import { auth } from '@/auth'
 import { prisma } from '@/lib/prisma'
+import { NextResponse } from 'next/server'
 
-export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
-    const user = await getUserFromRequest(req)
-    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+export const PUT = auth(async (req, ctx) => {
+    if (!req.auth?.user?.id) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
 
-    const urlId = parseInt(params.id)
-    const data = await req.json()
-    const updated = await prisma.monitoredUrl.updateMany({
-        where: { id: urlId, userId: user.userId },
-        data
-    })
-    if (updated.count === 0) return NextResponse.json({ error: 'Not found' }, { status: 404 })
-    return NextResponse.json({ success: true })
-}
+    const params = await ctx.params
+    const { id } = params as { id: string }
+    const urlId = parseInt(id)
 
-export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
-    const user = await getUserFromRequest(req)
-    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    if (isNaN(urlId)) {
+        return NextResponse.json({ error: 'Invalid ID' }, { status: 400 })
+    }
 
-    const urlId = parseInt(params.id)
-    await prisma.monitoredUrl.deleteMany({
-        where: { id: urlId, userId: user.userId }
-    })
-    return NextResponse.json({ success: true })
-}
+    const { id: _, ...data } = await req.json()
+
+    try {
+        const updated = await prisma.monitoredUrl.updateMany({
+            where: { id: urlId, userId: req.auth.user.id as string },
+            data
+        })
+        if (updated.count === 0) return NextResponse.json({ error: 'Not found' }, { status: 404 })
+        return NextResponse.json({ success: true })
+    } catch (error) {
+        console.error(error)
+        return NextResponse.json({ error: 'Failed to update monitor' }, { status: 500 })
+    }
+})
+
+export const DELETE = auth(async (req, ctx) => {
+    if (!req.auth?.user?.id) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const params = await ctx.params
+    const { id } = params as { id: string }
+    const urlId = parseInt(id)
+
+    if (isNaN(urlId)) {
+        return NextResponse.json({ error: 'Invalid ID' }, { status: 400 })
+    }
+
+    try {
+        const deleted = await prisma.monitoredUrl.deleteMany({
+            where: { id: urlId, userId: req.auth.user.id as string }
+        })
+        if (deleted.count === 0) return NextResponse.json({ error: 'Not found' }, { status: 404 })
+        return NextResponse.json({ success: true })
+    } catch (error) {
+        console.error(error)
+        return NextResponse.json({ error: 'Failed to delete monitor' }, { status: 500 })
+    }
+})
