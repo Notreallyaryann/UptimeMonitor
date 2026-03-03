@@ -2,11 +2,11 @@
   "name": "uptime-monitor",
   "version": "0.1.0",
   "private": true,
-   "type": "module",  
+  "type": "module",  
   "scripts": {
     "dev": "next dev",
-    "worker": "ts-node worker.ts",
-    "build": "next build",
+    "worker": "ts-node worker.ts",    
+    "build": "next build",             
     "start": "next start -p ${PORT:-3000} -H 0.0.0.0",
     "lint": "eslint"
   },

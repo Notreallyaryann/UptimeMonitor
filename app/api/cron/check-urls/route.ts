@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
-import { exec } from 'child_process'
-import { promisify } from 'util'
-const execAsync = promisify(exec)
+import { checkAllDueUrls } from '@/lib/url-checker'
+
+export const maxDuration = 60;
 
 export async function GET(request: Request) {
     const authHeader = request.headers.get('authorization')
@@ -9,14 +9,18 @@ export async function GET(request: Request) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    console.log('🕐 Cron triggered at:', new Date().toISOString())
+
     try {
-        const { stdout, stderr } = await execAsync('ts-node worker.ts')
-        console.log('Worker output:', stdout)
-        if (stderr) console.error('Worker errors:', stderr)
+
+        await checkAllDueUrls()
         
-        return NextResponse.json({ success: true })
+        return NextResponse.json({ 
+            success: true,
+            timestamp: new Date().toISOString() 
+        })
     } catch (error: any) {
-        console.error('Failed to run worker:', error)
+        console.error('❌ Cron failed:', error)
         return NextResponse.json({ error: error.message }, { status: 500 })
     }
 }

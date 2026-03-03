@@ -1,5 +1,6 @@
 import { auth } from '@/auth'
 import { prisma } from '@/lib/prisma'
+import { checkSingleUrl } from '@/lib/url-checker' 
 import { NextResponse } from 'next/server'
 
 export const GET = auth(async (req) => {
@@ -30,17 +31,15 @@ export const POST = auth(async (req) => {
         checkInterval: Number(checkInterval),
         timeout: Number(timeout),
         expectedStatus: Number(expectedStatus)
-      }
+      },
+      include: { user: true } 
     })
 
-   
-    const baseUrl = process.env.NEXTAUTH_URL 
-    fetch(`${baseUrl}/api/cron/check-urls`, {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${process.env.CRON_SECRET}`
-      }
-    }).catch(err => console.error('Background check failed:', err))
+    console.log(`✅ New URL added: ${url}`)
+
+    checkSingleUrl(newUrl).catch(err => {
+      console.error(`❌ Initial check failed for ${url}:`, err)
+    })
 
     return NextResponse.json(newUrl)
   } catch (error) {
