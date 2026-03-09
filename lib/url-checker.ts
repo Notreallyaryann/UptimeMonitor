@@ -59,7 +59,7 @@ export async function checkSingleUrl(urlEntry: any) {
             timeout: urlEntry.timeout * 1000,
             validateStatus: () => true,
             headers: {
-                'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36'
+                 'User-Agent': 'curl/8.7.1'
             }
         })
         statusCode = response.status
