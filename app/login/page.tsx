@@ -18,13 +18,13 @@ export default function LoginPage() {
     }
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 py-12 px-4 sm:px-6 lg:px-8">
-            <div className="max-w-md w-full space-y-8 bg-white p-10 rounded-2xl shadow-xl">
+        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-black py-12 px-4 sm:px-6 lg:px-8">
+            <div className="max-w-md w-full space-y-8 bg-white dark:bg-gray-900 p-10 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-800">
                 <div className="text-center">
-                    <h2 className="mt-6 text-4xl font-extrabold text-gray-900 tracking-tight">
+                    <h2 className="mt-6 text-4xl font-extrabold text-gray-900 dark:text-white tracking-tight">
                         Welcome Back
                     </h2>
-                    <p className="mt-3 text-sm text-gray-500">
+                    <p className="mt-3 text-sm text-gray-500 dark:text-gray-400">
                         Sign in to manage your uptime monitoring
                     </p>
                 </div>
@@ -33,10 +33,10 @@ export default function LoginPage() {
                     <button
                         onClick={() => handleSignIn("google")}
                         disabled={!!isLoading}
-                        className="w-full flex items-center justify-center gap-3 py-3 px-4 border border-gray-300 rounded-xl bg-white text-gray-700 font-semibold hover:bg-gray-50 transition-all duration-200 shadow-sm disabled:opacity-50"
+                        className="w-full flex items-center justify-center gap-3 py-3 px-4 border border-gray-300 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 font-semibold hover:bg-gray-50 dark:hover:bg-gray-700 transition-all duration-200 shadow-sm disabled:opacity-50"
                     >
                         {isLoading === "google" ? (
-                            <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-gray-900" />
+                            <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-gray-900 dark:border-white" />
                         ) : (
                             <>
                                 <svg className="w-5 h-5" viewBox="0 0 24 24">
@@ -65,7 +65,7 @@ export default function LoginPage() {
                     <button
                         onClick={() => handleSignIn("github")}
                         disabled={!!isLoading}
-                        className="w-full flex items-center justify-center gap-3 py-3 px-4 bg-gray-900 text-white rounded-xl font-semibold hover:bg-gray-800 transition-all duration-200 shadow-sm disabled:opacity-50"
+                        className="w-full flex items-center justify-center gap-3 py-3 px-4 bg-gray-900 dark:bg-indigo-600 text-white rounded-xl font-semibold hover:bg-gray-800 dark:hover:bg-indigo-700 transition-all duration-200 shadow-sm disabled:opacity-50"
                     >
                         {isLoading === "github" ? (
                             <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white" />
@@ -82,7 +82,7 @@ export default function LoginPage() {
 
                 <div className="relative my-8">
                     <div className="absolute inset-0 flex items-center">
-                        <div className="w-full border-t border-gray-200"></div>
+                        <div className="w-full border-t border-gray-200 dark:border-gray-800"></div>
                     </div>
                     <div className="relative flex justify-center text-sm uppercase">
                     </div>

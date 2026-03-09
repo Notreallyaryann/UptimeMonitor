@@ -31,12 +31,12 @@ export default function UrlList({ urls, onUpdate }: any) {
 
     if (!urls || urls.length === 0) {
         return (
-            <div className="text-center py-12 bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200">
+            <div className="text-center py-12 bg-gray-50 dark:bg-gray-800/50 rounded-2xl border-2 border-dashed border-gray-200 dark:border-gray-700">
                 <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                 </svg>
-                <h3 className="mt-2 text-sm font-medium text-gray-900">No monitors active</h3>
-                <p className="mt-1 text-sm text-gray-500">Get started by adding a new URL above.</p>
+                <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-white">No monitors active</h3>
+                <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Get started by adding a new URL above.</p>
             </div>
         )
     }
@@ -45,35 +45,35 @@ export default function UrlList({ urls, onUpdate }: any) {
         <div className="overflow-x-auto -mx-6 sm:mx-0">
             <table className="w-full text-left">
                 <thead>
-                    <tr className="border-b border-gray-100">
-                        <th className="px-6 py-4 text-sm font-semibold text-gray-600 uppercase tracking-wider">Monitor</th>
-                        <th className="px-6 py-4 text-sm font-semibold text-gray-600 uppercase tracking-wider text-center">Interval</th>
-                        <th className="px-6 py-4 text-sm font-semibold text-gray-600 uppercase tracking-wider text-center">Status</th>
-                        <th className="px-6 py-4 text-sm font-semibold text-gray-600 uppercase tracking-wider">Last Checked</th>
-                        <th className="px-6 py-4 text-sm font-semibold text-gray-600 uppercase tracking-wider text-right">Actions</th>
+                    <tr className="border-b border-gray-100 dark:border-gray-800">
+                        <th className="px-6 py-4 text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">Monitor</th>
+                        <th className="px-6 py-4 text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider text-center">Interval</th>
+                        <th className="px-6 py-4 text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider text-center">Status</th>
+                        <th className="px-6 py-4 text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">Last Checked</th>
+                        <th className="px-6 py-4 text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider text-right">Actions</th>
                     </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-50">
+                <tbody className="divide-y divide-gray-50 dark:divide-gray-800">
                     {urls.map((url: any) => (
-                        <tr key={url.id} className="hover:bg-gray-50/50 transition-colors">
+                        <tr key={url.id} className="hover:bg-gray-50/50 dark:hover:bg-gray-800/50 transition-colors">
                             <td className="px-6 py-4">
-                                <div className="text-sm font-medium text-gray-900 truncate max-w-xs" title={url.url}>
+                                <div className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate max-w-xs" title={url.url}>
                                     {url.url}
                                 </div>
                             </td>
                             <td className="px-6 py-4 text-center">
-                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200">
                                     {url.checkInterval}m
                                 </span>
                             </td>
                             <td className="px-6 py-4 text-center">
                                 <StatusBadge status={url.lastStatus} />
                             </td>
-                            <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                            <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">
                                 {url.lastCheckedAt ? (
                                     <div className="flex flex-col">
                                         <span>{new Date(url.lastCheckedAt).toLocaleDateString()}</span>
-                                        <span className="text-xs text-gray-400">{new Date(url.lastCheckedAt).toLocaleTimeString()}</span>
+                                        <span className="text-xs text-gray-400 dark:text-gray-500">{new Date(url.lastCheckedAt).toLocaleTimeString()}</span>
                                     </div>
                                 ) : 'Not checked yet'}
                             </td>
